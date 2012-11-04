@@ -3,10 +3,13 @@
 ;;; Author: Steve Purcell <steve@sanityinc.com>
 ;;; Homepage: https://github.com/purcell/flymake-css
 ;;; Version: DEV
+;;; Package-Requires: ((flymake-easy "0.1"))
 ;;
 ;;; Commentary:
 ;;
-;; Usage: (add-hook 'css-mode-hook 'flymake-css-load)
+;; Usage:
+;;   (require 'flymake-css)
+;;   (add-hook 'css-mode-hook 'flymake-css-load)
 ;;
 ;; Beware that csslint is quite slow, so there can be a significant lag
 ;; between editing and the highlighting of resulting errors.
@@ -19,7 +22,10 @@
 ;;
 ;; Based mainly on the author's flymake-jslint.el, and using the
 ;; error regex from Arne Jørgensen's similar flymake-csslint.el.
-(require 'flymake)
+;;
+;; Uses flymake-easy, from https://github.com/purcell/flymake-easy
+
+(require 'flymake-easy)
 
 ;;; Code:
 
@@ -36,40 +42,21 @@
 (defvar flymake-css-err-line-patterns
   '(("^\\(.*\\): line \\([[:digit:]]+\\), col \\([[:digit:]]+\\), \\(.+\\)$" 1 2 3 4)))
 
-(defun flymake-css--create-temp-in-system-tempdir (file-name prefix)
-  "Return a temporary file name into which flymake can save buffer contents.
-
-This is tidier than `flymake-create-temp-inplace', and therefore
-preferable when the checking doesn't depend on the file's exact
-location."
-  (make-temp-file (or prefix "flymake-css") nil ".css"))
-
-(defun flymake-css-init ()
+(defun flymake-css-command (filename)
   "Construct a command that flymake can use to check css source."
-  (list flymake-css-lint-command
-        (list "--format=compact"
-              (flymake-init-create-temp-buffer-copy
-               'flymake-css--create-temp-in-system-tempdir))))
+  (list flymake-css-lint-command "--format=compact" filename))
 
 
 ;;;###autoload
 (defun flymake-css-load ()
-  "Configure flymake mode to check the current buffer's css syntax.
-
-This function is designed to be called in `css-mode-hook' or
-equivalent; it does not alter flymake's global configuration, so
-function `flymake-mode' alone will not suffice."
+  "Configure flymake mode to check the current buffer's css syntax."
   (interactive)
-  (set (make-local-variable 'flymake-allowed-file-name-masks) '(("." flymake-css-init)))
-  (set (make-local-variable 'flymake-err-line-patterns) flymake-css-err-line-patterns)
-  (if (executable-find flymake-css-lint-command)
-      (flymake-mode t)
-    (message "Not enabling flymake: csslint command not found")))
-
-
-(defadvice flymake-post-syntax-check (before flymake-force-check-was-interrupted)
-  (setq flymake-check-was-interrupted t))
-(ad-activate 'flymake-post-syntax-check)
+  (when (eq major-mode 'css-mode)
+    ;; Don't activate in derived modes, e.g. less-css-mode
+    (flymake-easy-load 'flymake-css-command
+                       flymake-css-err-line-patterns
+                       'tempdir
+                       "css")))
 
 
 (provide 'flymake-css)
