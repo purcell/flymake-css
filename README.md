@@ -25,7 +25,7 @@ Beware that csslint is quite slow, so there can be a significant lag
 between editing and the highlighting of resulting errors.
 
 [marmalade]: http://marmalade-repo.org
-[melpa]: http://melpa.milkbox.net
+[melpa]: http://melpa.org
 
 <hr>
 
